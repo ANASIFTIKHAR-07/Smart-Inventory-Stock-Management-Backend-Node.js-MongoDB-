@@ -121,7 +121,7 @@ backend/
 3. **Environment Setup**
    Create a `.env` file in the root directory:
    ```env
-   MONGO_URI=mongodb://localhost:27017/smartstock_ai
+   MONGO_URI=mongodb uri here
    PORT=5000
    JWT_SECRET=your_jwt_secret_here
    ```
