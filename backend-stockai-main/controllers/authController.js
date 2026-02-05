@@ -137,10 +137,10 @@ export const login = async (req, res) => {
   }
 };
 
-// Profile
+// Profile (requires protect middleware - returns current user from JWT)
 export const getProfile = async (req, res) => {
   try {
-    res.json({ message: "Profile endpoint - requires authentication" });
+    res.json({ message: "Profile", user: req.user });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

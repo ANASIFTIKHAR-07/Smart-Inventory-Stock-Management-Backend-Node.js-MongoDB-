@@ -1,11 +1,11 @@
 import express from "express";
 import { getDashboardSummary } from "../controllers/dashboardController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// ✅ Apply middleware once for all routes
 router.use(protect);
+router.use(authorize("admin", "staff"));
 
 router.get("/summary", getDashboardSummary);
 

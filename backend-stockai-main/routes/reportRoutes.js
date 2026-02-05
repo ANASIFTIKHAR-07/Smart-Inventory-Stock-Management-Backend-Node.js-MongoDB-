@@ -1,5 +1,5 @@
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 import {
   getStockSummary,
   getTopProducts,
@@ -13,8 +13,8 @@ import { getMonthlyReport } from "../controllers/reportsController.js";
 
 const router = express.Router();
 
-// ✅ Apply middleware once for all routes
 router.use(protect);
+router.use(authorize("admin", "staff"));
 
 router.get("/stock-summary", getStockSummary);
 router.get("/top-products", getTopProducts);

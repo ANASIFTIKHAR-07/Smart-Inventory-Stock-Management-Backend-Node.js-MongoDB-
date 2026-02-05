@@ -13,8 +13,8 @@ import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
-// router.use(protect);
+// All AI analytics routes require authentication
+router.use(protect);
 
 // AI Demand Forecasting (rule-based)
 router.get('/demand-forecast/:productId', getDemandForecast);

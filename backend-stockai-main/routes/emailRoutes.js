@@ -1,12 +1,13 @@
 import express from "express";
 import { sendEmailController, sendPurchaseOrderEmailController } from "../controllers/emailController.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Generic email
-router.post("/generic", sendEmailController);
+router.use(protect);
+router.use(authorize("admin", "staff"));
 
-// Purchase order email
+router.post("/generic", sendEmailController);
 router.post("/purchase-order", sendPurchaseOrderEmailController);
 
 export default router;
