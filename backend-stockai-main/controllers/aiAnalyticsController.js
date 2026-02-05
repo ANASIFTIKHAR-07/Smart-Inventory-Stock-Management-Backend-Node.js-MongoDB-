@@ -6,7 +6,6 @@
 import { AIForecastingService } from '../utils/aiForecasting.js';
 import Product from '../models/Product.js';
 import StockMovement from '../models/StockMovement.js';
-import mongoose from 'mongoose';
 
 /**
  * @desc Get demand forecast for a specific product
