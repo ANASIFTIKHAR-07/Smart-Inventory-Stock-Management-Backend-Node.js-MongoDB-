@@ -62,9 +62,9 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// ✅ Check email env variables
-console.log("Email User:", process.env.EMAIL_USER);
-console.log("Email Pass:", process.env.EMAIL_PASS ? "✅ Loaded" : "❌ Missing");
+// // ✅ Check email env variables
+// console.log("Email User:", process.env.EMAIL_USER);
+// console.log("Email Pass:", process.env.EMAIL_PASS ? "✅ Loaded" : "❌ Missing");
 
 
 
