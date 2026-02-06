@@ -10,6 +10,7 @@ import {
   getGeminiForecast     // 👈 New import
 } from '../controllers/aiAnalyticsController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { validateObjectId } from '../middleware/validateObjectId.js';
 
 const router = express.Router();
 
@@ -17,16 +18,16 @@ const router = express.Router();
 router.use(protect);
 
 // AI Demand Forecasting (rule-based)
-router.get('/demand-forecast/:productId', getDemandForecast);
+router.get('/demand-forecast/:productId', validateObjectId('productId'), getDemandForecast);
 
 // AI Demand Forecasting (Gemini-powered)
-router.get('/gemini-forecast/:productId', getGeminiForecast);  // 👈 New route
+router.get('/gemini-forecast/:productId', validateObjectId('productId'), getGeminiForecast);  // 👈 New route
 
 // Anomaly Detection
-router.get('/anomalies/:productId', getProductAnomalies);
+router.get('/anomalies/:productId', validateObjectId('productId'), getProductAnomalies);
 
 // Comprehensive Product Insights
-router.get('/insights/:productId', getProductInsights);
+router.get('/insights/:productId', validateObjectId('productId'), getProductInsights);
 
 // Inventory Dashboard with AI Analytics
 router.get('/inventory-dashboard', getInventoryDashboard);

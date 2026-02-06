@@ -7,6 +7,7 @@ import {
   deleteProduct,
 } from "../controllers/productController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
+import { validateObjectId } from "../middleware/validateObjectId.js";
 
 const router = express.Router();
 
@@ -15,13 +16,13 @@ router.use(protect);
 
 // Read: any authenticated user (admin, staff, supplier)
 router.get("/", getProducts);
-router.get("/:id", getProductById);
+router.get("/:id", validateObjectId("id"), getProductById);
 
 // Write: admin or staff only
 router.post("/", authorize("admin", "staff"), createProduct);
-router.put("/:id", authorize("admin", "staff"), updateProduct);
+router.put("/:id", validateObjectId("id"), authorize("admin", "staff"), updateProduct);
 
 // Delete: admin only
-router.delete("/:id", authorize("admin"), deleteProduct);
+router.delete("/:id", validateObjectId("id"), authorize("admin"), deleteProduct);
 
 export default router;
