@@ -27,7 +27,6 @@ const stockMovementSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Index for better query performance
 stockMovementSchema.index({ product: 1, movementType: 1, createdAt: -1 });
 stockMovementSchema.index({ createdAt: -1 });
 

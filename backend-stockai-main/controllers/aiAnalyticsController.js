@@ -1,28 +1,17 @@
-/**
- * AI Analytics Controller
- * Handles AI-powered demand forecasting, anomaly detection, and insights
- */
-
 import { AIForecastingService } from '../utils/aiForecasting.js';
 import Product from '../models/Product.js';
 import StockMovement from '../models/StockMovement.js';
 
-/**
- * @desc Get demand forecast for a specific product
- * @route GET /api/ai-analytics/demand-forecast/:productId
- * @access Private
- */
 export const getDemandForecast = async (req, res) => {
   try {
     const { productId } = req.params;
-    const { period } = req.query; // Optional: days to analyze
-    
+    const { period } = req.query;
+
     const product = await Product.findById(productId).populate('supplier', 'name email');
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Try Gemini AI first, fallback to statistical method if it fails
     let forecast;
     try {
       forecast = await AIForecastingService.geminiForecast(productId);
@@ -33,7 +22,6 @@ export const getDemandForecast = async (req, res) => {
       );
     }
 
-    // Update product with latest forecast
     product.demandForecast = {
       ...forecast,
       lastUpdated: new Date()
@@ -73,11 +61,6 @@ export const getDemandForecast = async (req, res) => {
   }
 };
 
-/**
- * @desc Get anomaly detection for a product
- * @route GET /api/ai-analytics/anomalies/:productId
- * @access Private
- */
 export const getProductAnomalies = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -115,11 +98,6 @@ export const getProductAnomalies = async (req, res) => {
   }
 };
 
-/**
- * @desc Get comprehensive product insights
- * @route GET /api/ai-analytics/insights/:productId
- * @access Private
- */
 export const getProductInsights = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -160,11 +138,6 @@ export const getProductInsights = async (req, res) => {
   }
 };
 
-/**
- * @desc Get inventory analytics dashboard
- * @route GET /api/ai-analytics/inventory-dashboard
- * @access Private
- */
 export const getInventoryDashboard = async (req, res) => {
   try {
     const products = await Product.find({ isActive: true }).populate('supplier', 'name');
@@ -192,7 +165,6 @@ export const getInventoryDashboard = async (req, res) => {
       };
     }));
 
-    // Calculate summary statistics
     const summary = {
       totalProducts: products.length,
       lowStockProducts: dashboardData.filter(item => item.stock.status === 'low').length,
@@ -215,11 +187,6 @@ export const getInventoryDashboard = async (req, res) => {
   }
 };
 
-/**
- * @desc Get demand trends across categories
- * @route GET /api/ai-analytics/demand-trends
- * @access Private
- */
 export const getDemandTrends = async (req, res) => {
   try {
     const { category, period } = req.query;
@@ -246,7 +213,6 @@ export const getDemandTrends = async (req, res) => {
       };
     }));
 
-    // Group by category
     const categoryTrends = trends.reduce((acc, item) => {
       if (!acc[item.category]) {
         acc[item.category] = [];
@@ -274,7 +240,6 @@ export const getDemandTrends = async (req, res) => {
   }
 };
 
-// Helper functions
 function getStockStatus(currentStock, minThreshold) {
   if (currentStock <= minThreshold * 0.2) return 'critical';
   if (currentStock <= minThreshold) return 'low';
@@ -315,14 +280,8 @@ function generateActionItems(product, insights) {
   return actions;
 }
 
-/**
- * @desc Get sales trends for last 6 months (aggregated)
- * @route GET /api/ai-analytics/sales-trends
- * @access Private
- */
 export const getSalesTrends = async (req, res) => {
   try {
-    // Use StockMovement as proxy for sales (OUT)
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
@@ -338,7 +297,6 @@ export const getSalesTrends = async (req, res) => {
     ];
 
     let results = await StockMovement.aggregate(pipeline);
-    // Normalize to last 6 months even if missing data
     const months = [];
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
@@ -355,11 +313,6 @@ export const getSalesTrends = async (req, res) => {
   }
 };
 
-/**
- * @desc Get global demand forecast for next 3 months (simple placeholder)
- * @route GET /api/ai-analytics/demand-forecast
- * @access Private
- */
 export const getGlobalDemandForecast = async (req, res) => {
   try {
     const now = new Date();
@@ -369,7 +322,6 @@ export const getGlobalDemandForecast = async (req, res) => {
       months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
     }
 
-    // Simple heuristic: average last month OUT quantity across all products
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const end = new Date(now.getFullYear(), now.getMonth(), 1);
     const pipeline = [
@@ -377,7 +329,7 @@ export const getGlobalDemandForecast = async (req, res) => {
       { $group: { _id: null, total: { $sum: '$quantity' } } },
     ];
     const agg = await StockMovement.aggregate(pipeline);
-    const base = agg?.[0]?.total || 100; // fallback
+    const base = agg?.[0]?.total || 100;
 
     const forecasts = months.map((m, idx) => ({ month: m, forecast: Math.round(base * (1 + 0.05 * (idx + 1))) }));
     res.json(forecasts);
@@ -386,7 +338,6 @@ export const getGlobalDemandForecast = async (req, res) => {
   }
 };
 
-// New: AI Gemini Forecast
 export const getGeminiForecast = async (req, res) => {
   try {
     const { productId } = req.params;

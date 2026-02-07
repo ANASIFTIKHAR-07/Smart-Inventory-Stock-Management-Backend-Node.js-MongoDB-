@@ -2,12 +2,9 @@ import Product from "../models/Product.js";
 import StockMovement from "../models/StockMovement.js";
 import { checkThreshold } from "../utils/checkThreshold.js";
 
-// @desc Add a stock movement (IN / OUT)
-// @route POST /api/stock-movements
-// @access Private
 export const addStockMovement = async (req, res) => {
   try {
-    const { product, movementType, quantity, remarks, supplierId } = req.body;
+    const { product, movementType, quantity, remarks, supplierId, date } = req.body;
 
     if (!product || !movementType || !quantity) {
       return res.status(400).json({ message: "Product, movementType, and quantity are required." });
@@ -18,7 +15,6 @@ export const addStockMovement = async (req, res) => {
       return res.status(404).json({ message: "Product not found." });
     }
 
-    // adjust stock
     if (movementType === "IN") {
       productDoc.stockQty += quantity;
     } else if (movementType === "OUT") {
@@ -32,7 +28,6 @@ export const addStockMovement = async (req, res) => {
 
     await productDoc.save();
 
-    // record movement
     const movement = await StockMovement.create({
       product,
       movementType,
@@ -40,10 +35,9 @@ export const addStockMovement = async (req, res) => {
       remarks,
       supplierId,
       createdBy: req.user?.id,
-      movementDate: date || Date.now(), // ✅ use frontend date if provided
+      movementDate: date || Date.now(),
     });
 
-    // threshold check
     const thresholdResult = checkThreshold(productDoc);
 
     res.status(201).json({
@@ -58,9 +52,6 @@ export const addStockMovement = async (req, res) => {
   }
 };
 
-// @desc Get stock movement history for a product
-// @route GET /api/stock-movements/:productId
-// @access Private
 export const getStockMovements = async (req, res) => {
   try {
     const { productId } = req.params;

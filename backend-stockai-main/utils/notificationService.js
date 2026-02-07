@@ -1,14 +1,4 @@
-/**
- * Notification Service
- * Handles sending alerts, emails, and notifications for inventory management
- */
-
 export class NotificationService {
-  /**
-   * Send low stock alert
-   * @param {Object} product - Product object
-   * @param {number} currentStock - Current stock quantity
-   */
   static async sendLowStockAlert(product, currentStock) {
     const alertMessage = {
       type: 'low_stock',
@@ -25,21 +15,10 @@ export class NotificationService {
       action: 'Reorder immediately'
     };
 
-    // For now, log to console (replace with email/SMS service later)
-    console.log('🔔 LOW STOCK ALERT:', alertMessage);
-    
-    // TODO: Integrate with email service (Nodemailer)
-    // TODO: Integrate with SMS service (Twilio)
-    // TODO: Integrate with Slack webhook
-    
+    console.log('LOW STOCK ALERT:', alertMessage);
     return alertMessage;
   }
 
-  /**
-   * Send demand forecast alert
-   * @param {Object} product - Product object
-   * @param {Object} forecast - Forecast data
-   */
   static async sendDemandForecastAlert(product, forecast) {
     const alertMessage = {
       type: 'demand_forecast',
@@ -57,15 +36,10 @@ export class NotificationService {
       action: forecast.nextMonth > product.stockQty ? 'Plan reorder' : 'Monitor'
     };
 
-    console.log('🔔 DEMAND FORECAST ALERT:', alertMessage);
+    console.log('DEMAND FORECAST ALERT:', alertMessage);
     return alertMessage;
   }
 
-  /**
-   * Send anomaly detection alert
-   * @param {Object} product - Product object
-   * @param {Object} anomaly - Anomaly data
-   */
   static async sendAnomalyAlert(product, anomaly) {
     const alertMessage = {
       type: 'anomaly_detection',
@@ -84,15 +58,10 @@ export class NotificationService {
       action: 'Investigate and adjust inventory strategy'
     };
 
-    console.log('🔔 ANOMALY ALERT:', alertMessage);
+    console.log('ANOMALY ALERT:', alertMessage);
     return alertMessage;
   }
 
-  /**
-   * Send supplier performance alert
-   * @param {Object} supplier - Supplier object
-   * @param {Object} performance - Performance metrics
-   */
   static async sendSupplierPerformanceAlert(supplier, performance) {
     const alertMessage = {
       type: 'supplier_performance',
@@ -109,15 +78,10 @@ export class NotificationService {
       action: performance.onTimeDelivery < 0.8 ? 'Contact supplier' : 'Monitor'
     };
 
-    console.log('🔔 SUPPLIER PERFORMANCE ALERT:', alertMessage);
+    console.log('SUPPLIER PERFORMANCE ALERT:', alertMessage);
     return alertMessage;
   }
 
-  /**
-   * Send reorder recommendation
-   * @param {Object} product - Product object
-   * @param {Object} forecast - Forecast data
-   */
   static async sendReorderRecommendation(product, forecast) {
     const recommendedQuantity = Math.max(
       product.reorderQuantity || 50,
@@ -140,14 +104,10 @@ export class NotificationService {
       action: `Reorder ${recommendedQuantity} units`
     };
 
-    console.log('🔔 REORDER RECOMMENDATION:', alertMessage);
+    console.log('REORDER RECOMMENDATION:', alertMessage);
     return alertMessage;
   }
 
-  /**
-   * Send daily inventory summary
-   * @param {Array} alerts - Array of alerts for the day
-   */
   static async sendDailySummary(alerts) {
     const summary = {
       type: 'daily_summary',
@@ -160,23 +120,15 @@ export class NotificationService {
         lowStockProducts: alerts.filter(a => a.type === 'low_stock').length,
         anomalies: alerts.filter(a => a.type === 'anomaly_detection').length
       },
-      alerts: alerts.slice(0, 5), // Top 5 alerts
+      alerts: alerts.slice(0, 5),
       timestamp: new Date(),
       action: 'Review and take action'
     };
 
-    console.log('📊 DAILY SUMMARY:', summary);
+    console.log('DAILY SUMMARY:', summary);
     return summary;
   }
 
-  /**
-   * Send custom notification
-   * @param {string} type - Notification type
-   * @param {string} title - Notification title
-   * @param {string} message - Notification message
-   * @param {Object} details - Additional details
-   * @param {string} priority - Priority level
-   */
   static async sendCustomNotification(type, title, message, details = {}, priority = 'medium') {
     const notification = {
       type,
@@ -187,14 +139,10 @@ export class NotificationService {
       timestamp: new Date()
     };
 
-    console.log('🔔 CUSTOM NOTIFICATION:', notification);
+    console.log('CUSTOM NOTIFICATION:', notification);
     return notification;
   }
 
-  /**
-   * Basic admin notifier for server-side events (console for now)
-   * Later: integrate email/SMS/Slack
-   */
   static async notifyAdmin(title, message, details = {}) {
     const payload = {
       title,
@@ -202,7 +150,7 @@ export class NotificationService {
       details,
       at: new Date()
     };
-    console.log('📣 ADMIN NOTICE:', payload);
+    console.log('ADMIN NOTICE:', payload);
     return payload;
   }
 }

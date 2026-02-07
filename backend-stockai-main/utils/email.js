@@ -2,8 +2,6 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 dotenv.config();
 
-
-// Create transporter with verbose logging for debugging
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -12,24 +10,8 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Verify transporter on startup to surface configuration issues early
+const createSpinner = () => ({ start() {}, update() {}, stop() {} });
 
-
-const createSpinner = (label = "") => {
-  return {
-    start() {},
-    update() {},
-    stop() {},
-  };
-};
-
-
-
-// // Log to verify env variables
-// console.log("Email User:", process.env.EMAIL_USER);
-// console.log("Email Pass:", process.env.EMAIL_PASS ? "✅ Loaded" : "❌ Missing");
-
-// ✅ Generic email
 export const sendEmail = async (to, subject, text) => {
   const spinner = createSpinner();
   try {
@@ -51,7 +33,6 @@ export const sendEmail = async (to, subject, text) => {
   }
 };
 
-// ✅ HTML email (with optional text fallback)
 export const sendHtmlEmail = async (to, subject, html, textFallback = "") => {
   const spinner = createSpinner();
   try {
@@ -73,7 +54,6 @@ export const sendHtmlEmail = async (to, subject, html, textFallback = "") => {
   }
 };
 
-// ✅ Purchase Order Email
 export const sendPurchaseOrderEmail = async (
   supplierEmail,
   supplierName,

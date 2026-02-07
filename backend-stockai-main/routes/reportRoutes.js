@@ -22,9 +22,7 @@ router.get("/recent-movements", getRecentMovements);
 router.get("/products", getProductStockReport);
 router.get("/supplier", getSupplierStockReport);
 router.get("/purchase-orders", getPurchaseOrderReport);
-// Low Stock Alert Report
 router.get("/low-stock", getLowStockReport);
-// Monthly report (JSON/PDF)
 router.get("/monthly", getMonthlyReport);
 
 export default router;

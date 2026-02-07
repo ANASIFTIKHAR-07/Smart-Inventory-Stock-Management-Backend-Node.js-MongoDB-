@@ -3,27 +3,15 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-
-/**
- * AI Demand Forecasting Service
- * Uses historical data and Gemini AI to predict future demand and detect anomalies
- */
 export class AIForecastingService {
-  /**
-   * Calculate demand forecast for a product
-   * @param {string} productId - Product ID
-   * @param {number} period - Days to analyze (default: 30)
-   * @returns {Object} Forecast data
-   */
   static async calculateDemandForecast(productId, period = 30) {
     try {
       const endDate = new Date();
       const startDate = new Date(endDate.getTime() - (period * 24 * 60 * 60 * 1000));
 
-      // Get stock movements for the period
       const movements = await StockMovement.find({
         product: productId,
-        movementType: 'OUT', // Only sales/consumption
+        movementType: 'OUT',
         createdAt: { $gte: startDate, $lte: endDate }
       }).sort({ createdAt: 1 });
 
@@ -38,29 +26,18 @@ export class AIForecastingService {
         };
       }
 
-      // Calculate daily average demand
       const totalDemand = movements.reduce((sum, m) => sum + m.quantity, 0);
       const dailyAverage = totalDemand / period;
-
-      // Calculate trend (recent vs overall average)
       const recentPeriod = Math.min(7, Math.floor(period / 4));
       const recentMovements = movements.slice(-recentPeriod);
       const recentDemand = recentMovements.reduce((sum, m) => sum + m.quantity, 0);
       const recentAverage = recentDemand / recentPeriod;
-
-      // Trend factor
       const trendFactor = recentAverage / dailyAverage;
-
-      // Determine trend direction
       let trend = 'stable';
       if (trendFactor > 1.2) trend = 'increasing';
       else if (trendFactor < 0.8) trend = 'decreasing';
-
-      // Calculate forecasts
       const nextMonth = Math.round(dailyAverage * 30 * trendFactor);
       const nextQuarter = Math.round(dailyAverage * 90 * trendFactor);
-
-      // Confidence based on data consistency and trend stability
       const variance = Math.abs(trendFactor - 1);
       const confidence = Math.min(0.95, Math.max(0.5, 1 - variance * 0.4));
 
@@ -86,12 +63,6 @@ export class AIForecastingService {
     }
   }
 
-
-  /**
-   * Gemini AI demand forecasting
-   * @param {string} productId - Product ID
-   * @returns {Object} Forecast data
-   */
   static async geminiForecast(productId) {
     try {
       const endDate = new Date();
@@ -120,11 +91,9 @@ export class AIForecastingService {
         qty: movement.quantity
       }));
 
-      // Check if we can use real Gemini API
       const useRealGemini = process.env.GEMINI_REGION_AVAILABLE === 'true';
-      
+
       if (useRealGemini) {
-        // Try real Gemini API
         const modelNames = [
           'gemini-1.5-flash-latest',
           'gemini-1.5-pro-latest', 
@@ -136,11 +105,6 @@ export class AIForecastingService {
         for (const modelName of modelNames) {
           try {
             const model = genAI.getGenerativeModel({ model: modelName });
-            const testResult = await model.generateContent('Hello');
-            await testResult.response.text();
-            
-
-            
             const prompt = `
               You are an AI demand forecasting assistant.
               Based on this product sales history (daily): 
@@ -167,31 +131,20 @@ export class AIForecastingService {
               source: 'gemini-ai',
               dataPoints: movements.length
             };
-          } catch (err) {
-            // Model not available, try next one
-          }
+          } catch (err) {}
         }
       }
-      
-      // Use mock Gemini response (for regions where Gemini is not available)
-      
-      // Calculate basic statistics for intelligent mock response
+
       const totalDemand = movements.reduce((sum, m) => sum + m.quantity, 0);
       const avgDaily = totalDemand / 90;
       const recentWeek = movements.slice(-7);
       const recentAvg = recentWeek.reduce((sum, m) => sum + m.quantity, 0) / 7;
-      
-      // Determine trend
       const trendFactor = recentAvg / avgDaily;
       let trend = 'stable';
       if (trendFactor > 1.15) trend = 'increasing';
       else if (trendFactor < 0.85) trend = 'decreasing';
-      
-      // Generate intelligent forecasts
       const nextMonth = Math.round(avgDaily * 30 * Math.max(0.8, trendFactor));
       const nextQuarter = Math.round(avgDaily * 90 * Math.max(0.8, trendFactor));
-      
-      // Mock AI reasoning
       const reasons = [
         "Advanced pattern recognition indicates seasonal demand fluctuation",
         "Machine learning analysis shows correlation with market trends",
@@ -225,7 +178,7 @@ export class AIForecastingService {
   static async detectAnomalies(productId) {
     try {
       const endDate = new Date();
-      const startDate = new Date(endDate.getTime() - 14 * 24 * 60 * 60 * 1000); // Last 14 days
+      const startDate = new Date(endDate.getTime() - 14 * 24 * 60 * 60 * 1000);
 
       const movements = await StockMovement.find({
         product: productId,
@@ -242,7 +195,6 @@ export class AIForecastingService {
         };
       }
 
-      // Group by day for daily analysis
       const dailyDemand = {};
       movements.forEach(movement => {
         const date = movement.createdAt.toDateString();
@@ -251,12 +203,8 @@ export class AIForecastingService {
 
       const dailyValues = Object.values(dailyDemand);
       const avgDemand = dailyValues.reduce((a, b) => a + b, 0) / dailyValues.length;
-
-      // Calculate standard deviation
       const variance = dailyValues.reduce((sum, val) => sum + Math.pow(val - avgDemand, 2), 0) / dailyValues.length;
       const stdDev = Math.sqrt(variance);
-
-      // Check for anomalies (values beyond 2 standard deviations)
       const anomalies = dailyValues.filter(val => Math.abs(val - avgDemand) > 2 * stdDev);
 
       if (anomalies.length > 0) {
@@ -300,12 +248,6 @@ export class AIForecastingService {
     }
   }
 
-  /**
-   * Get comprehensive product insights using both statistical and AI methods
-   * @param {string} productId - Product ID
-   * @param {boolean} useAI - Whether to use Gemini AI (default: true)
-   * @returns {Object} Complete product insights
-   */
   static async getProductInsights(productId, useAI = true) {
     try {
       const [statisticalForecast, anomalies, aiForecast] = await Promise.all([
@@ -318,7 +260,7 @@ export class AIForecastingService {
 
       return {
         forecast: finalForecast,
-        statisticalForecast, // Keep original for comparison
+        statisticalForecast,
         aiForecast: useAI ? aiForecast : null,
         anomalies,
         insights: {
@@ -335,9 +277,6 @@ export class AIForecastingService {
     }
   }
 
-  /**
-   * Compare statistical and AI forecasts
-   */
   static compareForecasts(statistical, ai) {
     if (!ai || ai.error) return null;
 
@@ -353,18 +292,12 @@ export class AIForecastingService {
     };
   }
 
-  /**
-   * Calculate reorder urgency level
-   */
   static calculateReorderUrgency(forecast, anomalies) {
     if (anomalies.hasAnomaly && anomalies.type === 'spike') return 'high';
     if (forecast.trend === 'increasing') return 'medium';
     return 'low';
   }
 
-  /**
-   * Calculate overall risk level
-   */
   static calculateRiskLevel(forecast, anomalies) {
     let risk = 0;
 
@@ -377,11 +310,6 @@ export class AIForecastingService {
     return 'low';
   }
 
-  /**
-   * Get forecast for multiple products
-   * @param {Array} productIds - Array of product IDs
-   * @returns {Object} Batch forecast results
-   */
   static async getBatchForecast(productIds) {
     try {
       const forecasts = await Promise.all(

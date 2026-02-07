@@ -4,7 +4,6 @@ import Supplier from "../models/User.js";
 import PurchaseOrder from "../models/PurchaseOrder.js";
 import PDFDocument from "pdfkit";
 
-// 📊 Stock Summary
 export const getStockSummary = async (req, res) => {
   try {
     const totalProducts = await Product.countDocuments();
@@ -23,7 +22,6 @@ export const getStockSummary = async (req, res) => {
   }
 };
 
-// ⭐ Top Products
 export const getTopProducts = async (req, res) => {
   try {
     const topProducts = await StockMovement.aggregate([
@@ -52,7 +50,6 @@ export const getTopProducts = async (req, res) => {
   }
 };
 
-// 📦 Recent Stock Movements
 export const getRecentMovements = async (req, res) => {
   try {
     const movements = await StockMovement.find()
@@ -66,7 +63,6 @@ export const getRecentMovements = async (req, res) => {
   }
 };
 
-// 📄 Product Stock Report
 export const getProductStockReport = async (req, res) => {
   try {
     const products = await Product.find().populate("supplier", "name");
@@ -76,7 +72,6 @@ export const getProductStockReport = async (req, res) => {
   }
 };
 
-// 📄 Supplier Stock Report
 export const getSupplierStockReport = async (req, res) => {
   try {
     const suppliers = await Supplier.find();
@@ -86,7 +81,6 @@ export const getSupplierStockReport = async (req, res) => {
   }
 };
 
-// 📄 Purchase Order Report
 export const getPurchaseOrderReport = async (req, res) => {
   try {
     const orders = await PurchaseOrder.find()
@@ -98,7 +92,6 @@ export const getPurchaseOrderReport = async (req, res) => {
   }
 };
 
-// 📄 Low Stock Report
 export const getLowStockReport = async (req, res) => {
   try {
     const products = await Product.find({
@@ -110,10 +103,8 @@ export const getLowStockReport = async (req, res) => {
   }
 };
 
-// 📄 Monthly Report (PDF support with Sales + Damages)
 export const getMonthlyReport = async (req, res) => {
   try {
-    // Optional month query: YYYY-MM
     const monthParam = (req.query.month || "").trim();
     const now = new Date();
 
@@ -135,7 +126,6 @@ export const getMonthlyReport = async (req, res) => {
 
     const primary = getMonthRange(targetYear, targetMonthIdx);
 
-    // Helper to build $match to include either createdAt or movementDate
     const buildDateMatch = (range) => ({
       $or: [
         { createdAt: { $gte: range.start, $lt: range.end } },
@@ -187,13 +177,9 @@ export const getMonthlyReport = async (req, res) => {
       };
     };
 
-    // Try target month first
     let { movements, totalSales, topProducts, totalDamaged } = await runAggregations(primary);
-
-    // Determine if primary month is effectively empty for sales (even if damages exist)
     const hasInOrOut = movements.some(m => String(m._id).toUpperCase() === 'IN' || String(m._id).toUpperCase() === 'OUT');
 
-    // Auto-fallback: if no explicit month and either no IN/OUT, or no sales/top products, try previous month
     if (!monthParam && (!hasInOrOut || (totalSales === 0 && topProducts.length === 0))) {
       const prevMonthIdx = targetMonthIdx - 1;
       const prevYear = prevMonthIdx < 0 ? targetYear - 1 : targetYear;
@@ -205,12 +191,10 @@ export const getMonthlyReport = async (req, res) => {
         totalSales = agg.totalSales;
         topProducts = agg.topProducts;
         totalDamaged = agg.totalDamaged;
-        // Replace label with fallback month
         primary.label = fallback.label;
       }
     }
 
-    // 📦 Inventory snapshot
     const productsSnapshot = await Product.aggregate([
       { $group: { _id: null, totalProducts: { $sum: 1 }, totalStockQty: { $sum: "$stockQty" } } },
     ]);
@@ -224,7 +208,6 @@ export const getMonthlyReport = async (req, res) => {
       totalDamaged,
     };
 
-    // 📄 PDF Response
     const doc = new PDFDocument();
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", "attachment; filename=monthly-report.pdf");
@@ -237,7 +220,6 @@ export const getMonthlyReport = async (req, res) => {
     doc.fontSize(12).text(`Month: ${summary.month}`);
     doc.moveDown();
 
-    // Movements (show IN/OUT prominently)
     doc.text("Movements:");
     const movementMap = new Map();
     movements.forEach((m) => {
@@ -250,29 +232,24 @@ export const getMonthlyReport = async (req, res) => {
       if (inQty) doc.text(`- IN: ${inQty}`);
       if (outQty) doc.text(`- OUT: ${outQty}`);
     } else {
-      // fallback: print whatever movement groups exist
       movements.forEach((m) => {
         doc.text(`- ${m._id}: ${m.totalQty}`);
       });
     }
     doc.moveDown();
 
-    // Sales summary
     doc.text(`Total Sales This Month: ${totalSales}`);
     doc.moveDown();
 
-    // Top products
     doc.text("Top Selling Products:");
     summary.topProducts.forEach((p, i) => {
       doc.text(`${i + 1}. ${p.name} — Sold: ${p.totalSold}`);
     });
     doc.moveDown();
 
-    // Damages
     doc.text(`Stock Lost Due to Damages: ${totalDamaged}`);
     doc.moveDown();
 
-    // Inventory Summary
     doc.text("Inventory Summary:");
     doc.text(`Total Products: ${summary.inventory.totalProducts}`);
     doc.text(`Total Stock Qty: ${summary.inventory.totalStockQty}`);

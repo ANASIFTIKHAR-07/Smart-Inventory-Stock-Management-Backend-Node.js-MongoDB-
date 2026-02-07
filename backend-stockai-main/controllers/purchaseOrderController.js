@@ -1,16 +1,12 @@
-// controllers/purchaseOrderController.js
 import PurchaseOrder from "../models/PurchaseOrder.js";
 import User from "../models/User.js";
 import crypto from "crypto";
 import { sendPurchaseOrderEmail, sendHtmlEmail } from "../utils/email.js";
 
-// ✅ Create Purchase Order + Send Email
-// ✅ Create Purchase Order + Send Email
 export const createPurchaseOrder = async (req, res) => {
   try {
     const { supplierId, product, quantity, status, createdBy, expectedDate, notes } = req.body;
 
-    // ✅ Validate required fields
     const missingFields = [];
     if (!supplierId) missingFields.push("supplierId");
     if (!product) missingFields.push("product");
@@ -25,13 +21,11 @@ export const createPurchaseOrder = async (req, res) => {
       });
     }
 
-    // 1. Check if supplier exists and role is supplier
     const supplier = await User.findOne({ _id: supplierId, role: "supplier" });
     if (!supplier) {
       return res.status(404).json({ success: false, message: "Supplier not found" });
     }
 
-    // 2. Create purchase order
     const purchaseOrder = new PurchaseOrder({
       supplier: supplierId,
       product,
@@ -44,10 +38,8 @@ export const createPurchaseOrder = async (req, res) => {
 
     await purchaseOrder.save();
 
-    // 3. Populate product
     const populatedOrder = await purchaseOrder.populate("product", "name price");
 
-    // 4. Send email to supplier
     await sendPurchaseOrderEmail(
       supplier.email,
       supplier.name,
@@ -64,13 +56,11 @@ export const createPurchaseOrder = async (req, res) => {
       purchaseOrder: populatedOrder
     });
   } catch (error) {
-    console.error("❌ Error creating purchase order:", error);
+    console.error("Error creating purchase order:", error);
     res.status(500).json({ success: false, message: "Error creating purchase order", error: error.message });
   }
 };
 
-
-// ✅ Get All Purchase Orders
 export const getPurchaseOrders = async (req, res) => {
   try {
     const purchaseOrders = await PurchaseOrder.find()
@@ -79,12 +69,11 @@ export const getPurchaseOrders = async (req, res) => {
 
     res.status(200).json(purchaseOrders);
   } catch (error) {
-    console.error("❌ Error fetching purchase orders:", error);
+    console.error("Error fetching purchase orders:", error);
     res.status(500).json({ message: "Error fetching purchase orders" });
   }
 };
 
-// ✅ Get Single Purchase Order by ID
 export const getPurchaseOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -104,7 +93,6 @@ export const getPurchaseOrderById = async (req, res) => {
   }
 };
 
-// ✅ Update Only Purchase Order Status
 export const updatePurchaseOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -127,12 +115,11 @@ export const updatePurchaseOrderStatus = async (req, res) => {
       updatedOrder,
     });
   } catch (error) {
-    console.error("❌ Error updating purchase order status:", error);
+    console.error("Error updating purchase order status:", error);
     res.status(500).json({ message: "Error updating purchase order status" });
   }
 };
 
-// ✅ Delete Purchase Order
 export const deletePurchaseOrder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -144,12 +131,11 @@ export const deletePurchaseOrder = async (req, res) => {
 
     res.status(200).json({ message: "Purchase order deleted" });
   } catch (error) {
-    console.error("❌ Error deleting purchase order:", error);
+    console.error("Error deleting purchase order:", error);
     res.status(500).json({ message: "Error deleting purchase order" });
   }
 };
 
-// ✅ Generate approval token (HMAC) for secure one-click links
 const generateApprovalToken = (poId) => {
   const secret = process.env.APPROVAL_SECRET || "dev-secret";
   const hmac = crypto.createHmac("sha256", secret).update(String(poId)).digest("hex");
@@ -161,7 +147,6 @@ const verifyApprovalToken = (poId, token) => {
   return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(token || ""));
 };
 
-// ✅ Public approval endpoint (no auth) via signed link
 export const approvePurchaseOrderViaLink = async (req, res) => {
   try {
     const { id, token } = req.params;
@@ -177,7 +162,6 @@ export const approvePurchaseOrderViaLink = async (req, res) => {
 
     if (!updatedOrder) return res.status(404).send("Purchase order not found");
 
-    // Optionally inform supplier immediately
     try {
       const supplier = updatedOrder.supplier;
       if (supplier?.email) {
@@ -195,7 +179,6 @@ export const approvePurchaseOrderViaLink = async (req, res) => {
       console.error("Failed to email supplier after approval:", e?.message || e);
     }
 
-    // Render a confirmation HTML page with toast + animation
     res.set("Content-Type", "text/html");
     res.send(`
       <html>
@@ -241,7 +224,7 @@ export const approvePurchaseOrderViaLink = async (req, res) => {
       </html>
     `);
   } catch (error) {
-    console.error("❌ Error in approvePurchaseOrderViaLink:", error);
+    console.error("Error in approvePurchaseOrderViaLink:", error);
     res.status(500).send("Internal server error");
   }
 };

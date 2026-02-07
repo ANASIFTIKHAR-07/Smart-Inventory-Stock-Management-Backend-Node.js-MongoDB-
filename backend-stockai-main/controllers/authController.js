@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { sendHtmlEmail } from "../utils/email.js";
 
-// Signup (Admin/Staff)
 export const signup = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -137,7 +136,6 @@ export const login = async (req, res) => {
   }
 };
 
-// Profile (requires protect middleware - returns current user from JWT)
 export const getProfile = async (req, res) => {
   try {
     res.json({ message: "Profile", user: req.user });
@@ -146,7 +144,6 @@ export const getProfile = async (req, res) => {
   }
 };
 
-// Forgot Password
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -160,22 +157,14 @@ export const forgotPassword = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Generate reset token
     const resetToken = crypto.randomBytes(32).toString("hex");
-    
-    // Hash token and set to resetPasswordToken field
     const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-    
-    // Set token and expiration (15 minutes)
     user.resetPasswordToken = hashedToken;
     user.resetPasswordExpire = new Date(Date.now() + 15 * 60 * 1000);
-    
     await user.save();
 
-    // Create reset URL
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/reset-password/${resetToken}`;
 
-    // Email content
     const htmlContent = `
       <h2>Password Reset Request</h2>
       <p>Hello ${user.name},</p>
@@ -190,7 +179,6 @@ export const forgotPassword = async (req, res) => {
 
     const textContent = `Hello ${user.name},\n\nYou have requested to reset your password. Please visit the following link to reset your password:\n\n${resetUrl}\n\nThis link will expire in 15 minutes.\n\nIf you did not request this password reset, please ignore this email.\n\nBest regards,\nSmartStock AI Team`;
 
-    // Send email
     const emailSent = await sendHtmlEmail(
       user.email,
       "Password Reset Request - SmartStock AI",
@@ -208,15 +196,10 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-// Validate Reset Token
 export const validateResetToken = async (req, res) => {
   try {
     const { token } = req.params;
-
-    // Hash the token from URL
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
-    // Find user with matching token and valid expiration
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpire: { $gt: Date.now() }
@@ -232,7 +215,6 @@ export const validateResetToken = async (req, res) => {
   }
 };
 
-// Reset Password
 export const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
@@ -246,10 +228,7 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Password must be at least 6 characters long" });
     }
 
-    // Hash the token from URL
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
-    // Find user with matching token and valid expiration
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpire: { $gt: Date.now() }
@@ -259,10 +238,7 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired reset token" });
     }
 
-    // Hash new password
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Update user password and clear reset fields
     user.password = hashedPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;

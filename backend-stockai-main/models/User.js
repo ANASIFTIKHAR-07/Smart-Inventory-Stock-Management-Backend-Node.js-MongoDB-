@@ -5,12 +5,7 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true},
     password: { type: String, required: true },
-    role: { 
-      type: String, 
-      enum: ["admin", "staff", "supplier"], 
-      default: "staff" 
-    },
-    // Supplier-specific fields (only for users with role="supplier")
+    role: { type: String, enum: ["admin", "staff", "supplier"], default: "staff" },
     supplier: {
       companyName: { type: String },
       phone: { type: String },
@@ -23,43 +18,36 @@ const userSchema = new mongoose.Schema(
       paymentTerms: { type: String, default: "Net 30" },
       rating: { type: Number, default: 5.0, min: 1, max: 5 },
       isActive: { type: Boolean, default: true },
-      // Performance metrics
-      onTimeDelivery: { type: Number, default: 0.95 }, // 95% default
+      onTimeDelivery: { type: Number, default: 0.95 },
       qualityRating: { type: Number, default: 4.5, min: 1, max: 5 },
-      avgLeadTime: { type: Number, default: 7 }, // days
+      avgLeadTime: { type: Number, default: 7 },
       totalOrders: { type: Number, default: 0 },
       successfulOrders: { type: Number, default: 0 }
     },
-    // Common fields for all users
     phone: { type: String },
     address: { type: String },
     isActive: { type: Boolean, default: true },
     lastLogin: { type: Date },
     profileImage: { type: String },
-    // Password reset fields
     resetPasswordToken: { type: String },
     resetPasswordExpire: { type: Date }
   },
   { timestamps: true }
 );
 
-// Index for better performance
 userSchema.index({ role: 1, isActive: 1 });
 userSchema.index({ email: 1 });
 
-// Virtual for supplier performance
-userSchema.virtual('supplier.performanceScore').get(function() {
+userSchema.virtual('supplier.performanceScore').get(function () {
   if (this.role !== 'supplier' || !this.supplier) return null;
-  
-  const deliveryScore = this.supplier.onTimeDelivery * 40; // 40% weight
-  const qualityScore = (this.supplier.qualityRating / 5) * 30; // 30% weight
-  const reliabilityScore = this.supplier.totalOrders > 0 ? 
-    (this.supplier.successfulOrders / this.supplier.totalOrders) * 30 : 0; // 30% weight
-  
+  const deliveryScore = this.supplier.onTimeDelivery * 40;
+  const qualityScore = (this.supplier.qualityRating / 5) * 30;
+  const reliabilityScore = this.supplier.totalOrders > 0
+    ? (this.supplier.successfulOrders / this.supplier.totalOrders) * 30
+    : 0;
   return Math.round((deliveryScore + qualityScore + reliabilityScore) * 100) / 100;
 });
 
-// Ensure virtual fields are serialized
 userSchema.set('toJSON', { virtuals: true });
 userSchema.set('toObject', { virtuals: true });
 

@@ -3,7 +3,6 @@ import StockMovement from "../models/StockMovement.js";
 import PurchaseOrder from "../models/PurchaseOrder.js";
 import bcrypt from "bcrypt";
 
-// Create Supplier
 export const createSupplier = async (req, res) => {
   try {
     const { name, email, password, companyName, phone, address, city, state, country, postalCode, taxId, paymentTerms } = req.body;
@@ -13,7 +12,6 @@ export const createSupplier = async (req, res) => {
       return res.status(400).json({ message: "User with this email already exists" });
     }
 
-    // If no password provided by admin, generate a secure temporary one
     const tempPassword = password || `${Math.random().toString(36).slice(-10)}Aa1!`;
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
@@ -49,7 +47,6 @@ export const createSupplier = async (req, res) => {
   }
 };
 
-// Get All Suppliers
 export const getSuppliers = async (req, res) => {
   try {
     const suppliers = await User.find({ role: "supplier" })
@@ -61,7 +58,6 @@ export const getSuppliers = async (req, res) => {
   }
 };
 
-// Get Single Supplier
 export const getSupplierById = async (req, res) => {
   try {
     const supplier = await User.findOne({ _id: req.params.id, role: "supplier" })
@@ -78,7 +74,6 @@ export const getSupplierById = async (req, res) => {
   }
 };
 
-// Update Supplier
 export const updateSupplier = async (req, res) => {
   try {
     const { name, email, companyName, phone, address, city, state, country, postalCode, taxId, paymentTerms, rating, isActive } = req.body;
@@ -120,7 +115,6 @@ export const updateSupplier = async (req, res) => {
   }
 };
 
-// Delete Supplier (Deactivate)
 export const deactivateSupplier = async (req, res) => {
   try {
     const supplier = await User.findOneAndUpdate(
@@ -139,7 +133,6 @@ export const deactivateSupplier = async (req, res) => {
   }
 };
 
-// Get Supplier Performance
 export const getSupplierPerformance = async (req, res) => {
   try {
     const supplier = await User.findOne({ _id: req.params.id, role: "supplier" })
@@ -163,9 +156,6 @@ export const getSupplierPerformance = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-// GET /api/suppliers/performance - aggregated performance across suppliers (suppliers only)
-// controllers/supplierController.js
 
 export const getSuppliersPerformance = async (req, res) => {
   try {
